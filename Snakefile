@@ -5,6 +5,7 @@
 # time: 2021/06/11
 from bs4 import BeautifulSoup
 from pathlib import Path
+from io import StringIO
 import pandas as pd
 import shutil
 import json
@@ -64,11 +65,17 @@ checkpoint metadata:
     input:
         gsm_files
     run:
+        data = StringIO()
+        data.write('sra\tgse\tgsm\tsrr\turl\tmd5\tfastq\n')
+        for file in input:
+            for record in get_meta(file):
+                data.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(*record))
+        data.seek(0)
+        data = pd.read_table(data)
+        data = data.drop_duplicates('sra')
         with open(output[0], 'w') as f:
-            f.write('sra\tgse\tgsm\tsrr\turl\tmd5\tfastq\n')
-            for file in input:
-                for record in get_meta(file):
-                    f.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(*record))
+            data.to_csv(f, sep='\t', index=False)
+            
 
 
 def sra_url(wildcards):
