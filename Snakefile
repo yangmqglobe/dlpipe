@@ -4,6 +4,7 @@
 # file: Snakefile
 # time: 2021/06/11
 from bs4 import BeautifulSoup
+from datetime import datetime
 from pathlib import Path
 from io import StringIO
 import pandas as pd
@@ -20,9 +21,9 @@ rule fetch_one_gsm:
     output:
         CWD + '/sra/{gsm}.xml'
     resources:
-        newwork=1
+        network=1
     shell:
-        'esearch -db sra -query {wildcards.gsm} | efetch -format native > {output} && sleep 10 || sleep 30'
+        'esearch -db sra -query {wildcards.gsm} | efetch -format xml > {output} && sleep 1 || sleep 10'
 
 
 def get_meta(record):
@@ -36,7 +37,10 @@ def get_meta(record):
     except TypeError:
         return
     for run in soup.find_all('run'):
-        gsm = run.find('experiment_ref')['refname']
+        try:
+            gsm = run.find('external_id', namespace='GEO').text
+        except AttributeError:
+            gsm = re.findall(r'(GSM\d+)', record).pop(0)
         srr = run['accession']
         srafile = run.find('srafile', semantic_name="run")
         url = sorted(
@@ -68,8 +72,12 @@ checkpoint metadata:
         data = StringIO()
         data.write('sra\tgse\tgsm\tsrr\turl\tmd5\tfastq\n')
         for file in input:
-            for record in get_meta(file):
-                data.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(*record))
+            try:
+                for record in get_meta(file):
+                    data.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(*record))
+            except Exception as e:
+                print(file)
+                raise e
         data.seek(0)
         data = pd.read_table(data)
         data = data.drop_duplicates('sra')
@@ -100,8 +108,12 @@ rule download_one_sra:
     run:
         url = sra_url(wildcards)
         md5 = sra_md5(wildcards)
+        limit = config.get('speed_limit', '10m')
+        time = datetime.now().hour
+        if time < 9 or time > 21:
+            limit = '10m'
         download = (
-            f'wget -c {url} -O {output[0]}.tmp'
+            f'wget -c --limit-rate={limit} -O {output[0]}.tmp {url}'
             f' && echo "{md5}  {output[0]}.tmp" > {output[0]}.md5'
             f' && md5sum -c {output[0]}.md5'
             f' && mv {output[0]}.tmp {output[0]}'
