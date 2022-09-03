@@ -1,0 +1,13 @@
+name: dlpipe
+channels:
+  - defaults
+dependencies:
+  - snakemake
+  - entrez-direct
+  - sra-tools
+  - pandas
+  - beautifulsoup4
+  - ipython
+  - lxml
+  - pigz
+  - samtools
