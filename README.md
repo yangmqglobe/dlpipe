@@ -14,7 +14,7 @@ conda install -n base -c conda-forge mamba
 git clone https://github.com/yangmqglobe/dlpipe
 cd dlpipe
 mamba env create -f environment.yml
-conda activate dapipe
+conda activate dlpipe
 ```
 
 ## 运行流程

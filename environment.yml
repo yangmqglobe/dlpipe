@@ -1,13 +1,13 @@
 name: dlpipe
 channels:
+  - bioconda
+  - conda-forge
   - defaults
 dependencies:
-  - snakemake
-  - entrez-direct
-  - sra-tools
-  - pandas
-  - beautifulsoup4
-  - ipython
-  - lxml
-  - pigz
-  - samtools
+  - snakemake=7.16.0
+  - entrez-direct=16.2
+  - sra-tools=3.0.0
+  - pandas=1.5.1
+  - beautifulsoup4=4.11.1
+  - lxml=4.9.1
+  - pigz=2.6
